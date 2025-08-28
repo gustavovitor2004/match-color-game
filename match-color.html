@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Color Match</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --main-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      --panel-bg: #fff;
+      --panel-fg: #232a36;
+      --accent: #27ae60;
+      --accent-hover: #219150;
+      --border: #e0e0e0;
+      --shadow: 0 8px 32px #0002;
+      --color-red: #e74c3c;
+      --color-blue: #3498db;
+      --color-green: #27ae60;
+      --color-yellow: #f1c40f;
+      --color-purple: #8e44ad;
+      --color-orange: #e67e22;
+      --color-cyan: #1abc9c;
+      --color-pink: #fd79a8;
+      --btn-size: 90px;
+      --target-size: 120px;
+      --transition: 0.25s cubic-bezier(.4,2,.6,1);
+    }
+    body {
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: var(--main-bg);
+      color: var(--panel-fg);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      transition: background 0.3s;
+    }
+    #main-wrapper {
+      max-width: 440px;
+      margin: 48px auto;
+      background: var(--panel-bg);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 0 0 32px 0;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid #fff;
+      transition: box-shadow 0.3s;
+    }
+    header {
+      padding: 32px 32px 0 32px;
+      text-align: center;
+      background: linear-gradient(90deg, #8e44ad 0%, #27ae60 100%);
+      color: #fff;
+      border-radius: 0 0 32px 32px;
+      box-shadow: 0 4px 24px #8e44ad22;
+      position: relative;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 2.2em;
+      letter-spacing: 2px;
+      font-weight: 800;
+      text-shadow: 0 2px 8px #0002;
+    }
+    #settings-btn {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      font-size: 1.7em;
+      cursor: pointer;
+      color: #fff;
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    #settings-btn:hover { background: rgba(255,255,255,0.3); }
+    #settings-panel {
+      display: none;
+      position: absolute;
+      top: 70px;
+      right: 24px;
+      background: #fff;
+      color: var(--panel-fg);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px #0003;
+      z-index: 10;
+      min-width: 240px;
+      padding: 22px 22px 12px 22px;
+      font-size: 1em;
+      border: 2px solid #eee;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px);} to { opacity: 1; transform: none;} }
+    #settings-panel label { font-weight: 600; }
+    #settings-panel select, #settings-panel input[type=range] {
+      width: 100%;
+      margin: 6px 0 16px 0;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      padding: 4px 8px;
+      font-size: 1em;
+      background: #f7f7fa;
+    }
+    #settings-panel .close-btn {
+      float: right;
+      background: none;
+      border: none;
+      font-size: 1.3em;
+      color: var(--accent);
+      cursor: pointer;
+      margin-top: -8px;
+    }
+    #settings-panel .close-btn:hover { color: var(--accent-hover); }
+    #settings-panel .icon { margin-right: 6px; }
+    #instructions {
+      color: #555;
+      margin: 18px 0 18px 0;
+      font-size: 1.08em;
+      text-align: center;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    #game-area {
+      padding: 0 24px;
+      text-align: center;
+    }
+    #score, #timer {
+      font-size: 1.15em;
+      margin: 8px 12px;
+      display: inline-block;
+      font-weight: 600;
+      letter-spacing: 1px;
+      background: #f7f7fa;
+      border-radius: 8px;
+      padding: 4px 14px;
+      box-shadow: 0 2px 8px #0001;
+    }
+    #target-color {
+      width: var(--target-size);
+      height: var(--target-size);
+      border-radius: 50%;
+      margin: 32px auto 18px auto;
+      border: 8px solid #fff;
+      box-shadow: 0 0 32px #0002, 0 0 0 8px #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, box-shadow 0.2s;
+      animation: popIn 0.3s;
+    }
+    @keyframes popIn { from { transform: scale(0.7);} to { transform: scale(1);} }
+    #color-btns {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 18px;
+      min-height: 110px;
+    }
+    .color-btn {
+      width: var(--btn-size);
+      height: var(--btn-size);
+      border: none;
+      border-radius: 50%;
+      font-size: 0;
+      cursor: pointer;
+      box-shadow: 0 4px 16px #0002, 0 0 0 4px #fff;
+      outline: none;
+      position: relative;
+      transition: transform 0.12s, box-shadow 0.2s;
+      background: #eee;
+      animation: popIn 0.2s;
+    }
+    .color-btn:active {
+      transform: scale(0.93);
+      box-shadow: 0 2px 8px #0001;
+      filter: brightness(1.1);
+    }
+    .color-btn::after {
+      content: '';
+      display: block;
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 80%;
+      height: 80%;
+      border-radius: 50%;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 0 16px 2px rgba(255,255,255,0.25) inset;
+      pointer-events: none;
+    }
+    .red { background: var(--color-red); }
+    .blue { background: var(--color-blue); }
+    .green { background: var(--color-green); }
+    .yellow { background: var(--color-yellow); }
+    .purple { background: var(--color-purple); }
+    .orange { background: var(--color-orange); }
+    .cyan { background: var(--color-cyan); }
+    .pink { background: var(--color-pink); }
+    #powerup {
+      margin: 16px auto;
+      padding: 10px 20px;
+      background: linear-gradient(90deg, #8e44ad 0%, #27ae60 100%);
+      color: #fff;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      display: none;
+      animation: pulse 1.2s infinite;
+      font-size: 1.1em;
+      box-shadow: 0 2px 12px #8e44ad33;
+      max-width: 200px;
+      border: 2px solid #fff;
+      letter-spacing: 1px;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 #8e44ad55; }
+      70% { box-shadow: 0 0 0 16px #8e44ad11; }
+      100% { box-shadow: 0 0 0 0 #8e44ad00; }
+    }
+    #gameover-screen {
+      text-align: center;
+      margin-top: 24px;
+      animation: fadeIn 0.3s;
+    }
+    #game-over-msg {
+      font-size: 1.3em;
+      margin: 16px 0;
+      font-weight: 700;
+      color: #e74c3c;
+      text-shadow: 0 2px 8px #e74c3c22;
+    }
+    #final-score {
+      font-size: 1.1em;
+      margin-bottom: 18px;
+      color: #232a36;
+      font-weight: 600;
+    }
+    #start-btn {
+      background: linear-gradient(90deg, #27ae60 0%, #8e44ad 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 38px;
+      font-size: 1.15em;
+      cursor: pointer;
+      margin-top: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 12px #27ae6022;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    #start-btn:hover {
+      background: linear-gradient(90deg, #219150 0%, #6c3483 100%);
+      box-shadow: 0 4px 16px #8e44ad33;
+    }
+    /* Removed flash animations */
+    /* Responsivo */
+    @media (max-width: 600px) {
+      #main-wrapper { max-width: 99vw; }
+      #target-color { width: 80px; height: 80px; }
+      .color-btn { width: 56px !important; height: 56px !important; }
+      #settings-panel { min-width: 90vw; right: 2vw; }
+    }
+    /* Tema escuro */
+    body.dark {
+      --main-bg: linear-gradient(135deg, #232a36 0%, #181c24 100%);
+      --panel-bg: #232a36;
+      --panel-fg: #f5f5f5;
+      --border: #333;
+      color: var(--panel-fg);
+    }
+    body.dark #settings-panel { background: #232a36; color: #f5f5f5; border: 2px solid #333; }
+    body.dark #score, body.dark #timer { background: #232a36; color: #fff; }
+    body.dark #target-color { border: 8px solid #232a36; box-shadow: 0 0 32px #0005, 0 0 0 8px #181c24; }
+    body.dark .color-btn { box-shadow: 0 4px 16px #0005, 0 0 0 4px #232a36; }
+    body.dark #powerup { background: linear-gradient(90deg, #6c3483 0%, #219150 100%); border: 2px solid #232a36;}
+    body.dark #start-btn { background: linear-gradient(90deg, #34495e 0%, #6c3483 100%);}
+    body.dark #start-btn:hover { background: linear-gradient(90deg, #22313a 0%, #8e44ad 100%);}
+    body.dark #game-over-msg { color: #ff7675; text-shadow: 0 2px 8px #ff767522;}
+    /* Idioma select */
+    #lang-select { width: 100%; margin: 6px 0 16px 0; }
+  </style>
+  <link href="https://fonts.googleapis.com/css?family=Montserrat:700,800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="main-wrapper">
+  <header>
+    <h1 id="title">Color Match</h1>
+    <button id="settings-btn" title="Configurações">⚙️</button>
+    <div id="settings-panel">
+      <button class="close-btn" title="Fechar">&times;</button>
+      <div>
+        <label for="lang-select"><span class="icon">🌐</span><span id="lbl-lang">Idioma:</span></label>
+        <select id="lang-select">
+          <option value="pt-br">Português (BR)</option>
+          <option value="en-us">English (US)</option>
+          <option value="es-es">Español (ES)</option>
+          <option value="zh-cn">中文 (CN)</option>
+          <option value="de-de">Deutsch (DE)</option>
+          <option value="ru-ru">Русский (RU)</option>
+        </select>
+      </div>
+      <div>
+        <label for="sound-toggle"><span class="icon">🔊</span><span id="lbl-sound">Som:</span></label>
+        <input type="checkbox" id="sound-toggle" checked>
+      </div>
+      <div>
+        <label for="size-range"><span class="icon">🔘</span><span id="lbl-size">Tamanho dos botões:</span></label>
+        <input type="range" id="size-range" min="50" max="120" value="90">
+      </div>
+      <div>
+        <label for="difficulty-select"><span class="icon">🎯</span><span id="lbl-difficulty">Dificuldade:</span></label>
+        <select id="difficulty-select">
+          <option value="easy">Fácil</option>
+          <option value="medium">Médio</option>
+          <option value="hard">Difícil</option>
+        </select>
+      </div>
+      <div>
+        <label for="theme-toggle"><span class="icon">🌙</span><span id="lbl-theme">Tema escuro:</span></label>
+        <input type="checkbox" id="theme-toggle">
+      </div>
+    </div>
+  </header>
+  <div id="instructions"></div>
+  <div id="game-area">
+    <div id="score"></div>
+    <div id="timer"></div>
+    <div id="target-color"></div>
+    <div id="color-btns"></div>
+    <div id="powerup"></div>
+    <div id="gameover-screen" class="hidden">
+      <div id="game-over-msg"></div>
+      <div id="final-score"></div>
+    </div>
+    <button id="start-btn"></button>
+  </div>
+  <!-- Áudios -->
+  <audio id="bg-music" src="https://cdn.pixabay.com/audio/2022/10/16/audio_12b5b7b6b2.mp3" loop></audio>
+  <audio id="sfx-correct" src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b7b7e.mp3"></audio>
+  <audio id="sfx-wrong" src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b7b7e.mp3"></audio>
+  <audio id="sfx-powerup" src="https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b7b7e.mp3"></audio>
+</div>
+<script>
+const TEXTS = {
+  "pt-br": {
+    title: "Color Match",
+    instructions: "Clique no botão da mesma cor exibida no centro.<br>Ganhe pontos, use power-ups e desafie seus reflexos!",
+    start: "Jogar",
+    score: "Pontos",
+    timer: "Tempo",
+    gameover_time: "Tempo esgotado!",
+    gameover_wrong: "Você errou! Fim de jogo!",
+    finalscore: "Sua pontuação:",
+    powerup: "+5 segundos!",
+    lbl_lang: "Idioma:",
+    lbl_sound: "Som:",
+    lbl_size: "Tamanho dos botões:",
+    lbl_difficulty: "Dificuldade:",
+    lbl_theme: "Tema escuro:",
+    easy: "Fácil",
+    medium: "Médio",
+    hard: "Difícil"
+  },
+  "en-us": {
+    title: "Color Match",
+    instructions: "Click the button with the same color as shown in the center.<br>Score points, use power-ups and test your reflexes!",
+    start: "Play",
+    score: "Score",
+    timer: "Time",
+    gameover_time: "Time's up!",
+    gameover_wrong: "Wrong color! Game Over!",
+    finalscore: "Your score:",
+    powerup: "+5 seconds!",
+    lbl_lang: "Language:",
+    lbl_sound: "Sound:",
+    lbl_size: "Button size:",
+    lbl_difficulty: "Difficulty:",
+    lbl_theme: "Dark theme:",
+    easy: "Easy",
+    medium: "Medium",
+    hard: "Hard"
+  },
+  "es-es": {
+    title: "Color Match",
+    instructions: "Haz clic en el botón del mismo color que se muestra en el centro.<br>Gana puntos, usa power-ups y desafía tus reflejos!",
+    start: "Jugar",
+    score: "Puntos",
+    timer: "Tiempo",
+    gameover_time: "¡Se agotó el tiempo!",
+    gameover_wrong: "¡Te equivocaste! Juego terminado!",
+    finalscore: "Tu puntuación:",
+    powerup: "+5 segundos!",
+    lbl_lang: "Idioma:",
+    lbl_sound: "Sonido:",
+    lbl_size: "Tamaño de los botones:",
+    lbl_difficulty: "Dificultad:",
+    lbl_theme: "Tema oscuro:",
+    easy: "Fácil",
+    medium: "Medio",
+    hard: "Difícil"
+  },
+  "zh-cn": {
+    title: "颜色匹配",
+    instructions: "点击中心显示的相同颜色的按钮。<br>获得分数，使用增益道具，挑战你的反应速度！",
+    start: "开始",
+    score: "分数",
+    timer: "时间",
+    gameover_time: "时间到！",
+    gameover_wrong: "你错了！游戏结束！",
+    finalscore: "你的分数：",
+    powerup: "+5秒！",
+    lbl_lang: "语言：",
+    lbl_sound: "声音：",
+    lbl_size: "按钮大小：",
+    lbl_difficulty: "难度：",
+    lbl_theme: "暗黑主题：",
+    easy: "简单",
+    medium: "中等",
+    hard: "困难"
+  },
+  "de-de": {
+    title: "Farben Match",
+    instructions: "Klicken Sie auf die Taste mit der gleichen Farbe, die in der Mitte angezeigt wird.<br>Erhalten Sie Punkte, nutzen Sie Power-ups und fordern Sie Ihre Reflexe heraus!",
+    start: "Spielen",
+    score: "Punkte",
+    timer: "Zeit",
+    gameover_time: "Zeit abgelaufen!",
+    gameover_wrong: "Falsche Farbe! Spiel vorbei!",
+    finalscore: "Deine Punktzahl:",
+    powerup: "+5 Sekunden!",
+    lbl_lang: "Sprache:",
+    lbl_sound: "Ton:",
+    lbl_size: "Knopfgröße:",
+    lbl_difficulty: "Schwierigkeit:",
+    lbl_theme: "Dunkles Thema:",
+    easy: "Einfach",
+    medium: "Mittel",
+    hard: "Schwer"
+  },
+  "ru-ru": {
+    title: "Цветовой Матч",
+    instructions: "Нажмите на кнопку того же цвета, который отображается в центре.<br>Набирайте очки, используйте бонусы и вызовите свои рефлексы!",
+    start: "Играть",
+    score: "Очки",
+    timer: "Время",
+    gameover_time: "Время вышло!",
+    gameover_wrong: "Вы ошиблись! Игра окончена!",
+    finalscore: "Ваш счет:",
+    powerup: "+5 секунд!",
+    lbl_lang: "Язык:",
+    lbl_sound: "Звук:",
+    lbl_size: "Размер кнопок:",
+    lbl_difficulty: "Сложность:",
+    lbl_theme: "Темная тема:",
+    easy: "Легкий",
+    medium: "Средний",
+    hard: "Сложный"
+  }
+};
+const ALL_COLORS = [
+  { name: 'red',    label: { 'pt-br': 'Vermelho', 'en-us': 'Red', 'es-es': 'Rojo', 'zh-cn': '红色', 'de-de': 'Rot', 'ru-ru': 'Красный' },    hex: '#e74c3c' },
+  { name: 'blue',   label: { 'pt-br': 'Azul',     'en-us': 'Blue', 'es-es': 'Azul', 'zh-cn': '蓝色', 'de-de': 'Blau', 'ru-ru': 'Синий' },   hex: '#3498db' },
+  { name: 'green',  label: { 'pt-br': 'Verde',    'en-us': 'Green', 'es-es': 'Verde', 'zh-cn': '绿色', 'de-de': 'Grün', 'ru-ru': 'Зелёный' },  hex: '#27ae60' },
+  { name: 'yellow', label: { 'pt-br': 'Amarelo',  'en-us': 'Yellow', 'es-es': 'Amarillo', 'zh-cn': '黄色', 'de-de': 'Gelb', 'ru-ru': 'Жёлтый' }, hex: '#f1c40f' },
+  { name: 'purple', label: { 'pt-br': 'Roxo',     'en-us': 'Purple', 'es-es': 'Púrpura', 'zh-cn': '紫色', 'de-de': 'Lila', 'ru-ru': 'Фиолетовый' }, hex: '#8e44ad' },
+  { name: 'orange', label: { 'pt-br': 'Laranja',  'en-us': 'Orange', 'es-es': 'Naranja', 'zh-cn': '橙色', 'de-de': 'Orange', 'ru-ru': 'Оранжевый' }, hex: '#e67e22' },
+  { name: 'cyan',   label: { 'pt-br': 'Ciano',    'en-us': 'Cyan', 'es-es': 'Cian', 'zh-cn': '青色', 'de-de': 'Türkis', 'ru-ru': 'Бирюзовый' },   hex: '#1abc9c' },
+  { name: 'pink',   label: { 'pt-br': 'Rosa',     'en-us': 'Pink', 'es-es': 'Rosa', 'zh-cn': '粉色', 'de-de': 'Pink', 'ru-ru': 'Розовый' },   hex: '#fd79a8' },
+  { name: 'brown',  label: { 'pt-br': 'Marrom',   'en-us': 'Brown', 'es-es': 'Marrón', 'zh-cn': '棕色', 'de-de': 'Braun', 'ru-ru': 'Коричневый' },  hex: '#8d5524' },
+  { name: 'lime',   label: { 'pt-br': 'Limão',    'en-us': 'Lime', 'es-es': 'Lima', 'zh-cn': '柠檬黄', 'de-de': 'Lime', 'ru-ru': 'Лаймовый' },   hex: '#bfff00' },
+  { name: 'navy',   label: { 'pt-br': 'Azul Marinho', 'en-us': 'Navy', 'es-es': 'Azul Marino', 'zh-cn': '海军蓝', 'de-de': 'Marineblau', 'ru-ru': 'Тёмно-синий' }, hex: '#001f3f' },
+  { name: 'teal',   label: { 'pt-br': 'Verde-azulado', 'en-us': 'Teal', 'es-es': 'Turquesa', 'zh-cn': '水鸭色', 'de-de': 'Teal', 'ru-ru': 'Бирюзово-зелёный' }, hex: '#008080' },
+  { name: 'olive',  label: { 'pt-br': 'Oliva',    'en-us': 'Olive', 'es-es': 'Oliva', 'zh-cn': '橄榄绿', 'de-de': 'Oliv', 'ru-ru': 'Оливковый' },  hex: '#808000' },
+  { name: 'magenta',label: { 'pt-br': 'Magenta',  'en-us': 'Magenta', 'es-es': 'Magenta', 'zh-cn': '品红', 'de-de': 'Magenta', 'ru-ru': 'Малиновый' },hex: '#e040fb' },
+  { name: 'gold',   label: { 'pt-br': 'Dourado',  'en-us': 'Gold', 'es-es': 'Oro', 'zh-cn': '金色', 'de-de': 'Gold', 'ru-ru': 'Золотой' },   hex: '#ffd700' },
+  { name: 'silver', label: { 'pt-br': 'Prata',    'en-us': 'Silver', 'es-es': 'Plata', 'zh-cn': '银色', 'de-de': 'Silber', 'ru-ru': 'Серебряный' }, hex: '#bdc3c7' },
+  { name: 'indigo', label: { 'pt-br': 'Índigo',   'en-us': 'Indigo', 'es-es': 'Índigo', 'zh-cn': '靛蓝', 'de-de': 'Indigo', 'ru-ru': 'Индиго' }, hex: '#3f51b5' },
+  { name: 'beige',  label: { 'pt-br': 'Bege',     'en-us': 'Beige', 'es-es': 'Beige', 'zh-cn': '米色', 'de-de': 'Beige', 'ru-ru': 'Бежевый' },  hex: '#f5f5dc' },
+  { name: 'coral',  label: { 'pt-br': 'Coral',    'en-us': 'Coral', 'es-es': 'Coral', 'zh-cn': '珊瑚色', 'de-de': 'Koralle', 'ru-ru': 'Коралловый' }, hex: '#ff7f50' },
+  { name: 'mint',   label: { 'pt-br': 'Menta',    'en-us': 'Mint', 'es-es': 'Menta', 'zh-cn': '薄荷绿', 'de-de': 'Minz', 'ru-ru': 'Мятный' },   hex: '#98ff98' }
+];
+let lang = "pt-br";
+let difficulty = "easy";
+let soundOn = true;
+let btnSize = 90;
+let darkMode = false;
+let score = 0, time = 30, round = 0, canPlay = false, timerInterval, powerupActive = false;
+let currentColor = '', currentColors = [];
+let shuffleEvery = 0, shuffleCounter = 0, increaseEvery = 10, maxColors = 8, timePerRound = 0, timeTimeout = null;
+let started = false;
+
+const $ = id => document.getElementById(id);
+const h1 = $("title");
+const instructions = $("instructions");
+const startBtn = $("start-btn");
+const scoreEl = $("score");
+const timerEl = $("timer");
+const targetColorEl = $("target-color");
+const colorBtnsDiv = $("color-btns");
+const powerupEl = $("powerup");
+const gameOverMsg = $("game-over-msg");
+const finalScore = $("final-score");
+const gameoverScreen = $("gameover-screen");
+const settingsBtn = $("settings-btn");
+const settingsPanel = $("settings-panel");
+const langSelect = $("lang-select");
+const soundToggle = $("sound-toggle");
+const sizeRange = $("size-range");
+const difficultySelect = $("difficulty-select");
+const themeToggle = $("theme-toggle");
+const bgMusic = $("bg-music");
+const sfxCorrect = $("sfx-correct");
+const sfxWrong = $("sfx-wrong");
+const sfxPowerup = $("sfx-powerup");
+
+function setTexts() {
+  document.title = TEXTS[lang].title;
+  h1.textContent = TEXTS[lang].title;
+  instructions.innerHTML = TEXTS[lang].instructions;
+  startBtn.textContent = TEXTS[lang].start;
+  $("lbl-lang").textContent = TEXTS[lang].lbl_lang;
+  $("lbl-sound").textContent = TEXTS[lang].lbl_sound;
+  $("lbl-size").textContent = TEXTS[lang].lbl_size;
+  $("lbl-difficulty").textContent = TEXTS[lang].lbl_difficulty;
+  $("lbl-theme").textContent = TEXTS[lang].lbl_theme;
+  difficultySelect.options[0].text = TEXTS[lang].easy;
+  difficultySelect.options[1].text = TEXTS[lang].medium;
+  difficultySelect.options[2].text = TEXTS[lang].hard;
+}
+function updateScore() { scoreEl.textContent = `${TEXTS[lang].score}: ${score}`; }
+function updateTimer() { timerEl.textContent = `${TEXTS[lang].timer}: ${time}`; }
+function setBtnSize(size) {
+  document.documentElement.style.setProperty('--btn-size', size + 'px');
+  document.documentElement.style.setProperty('--target-size', (size * 1.3) + 'px');
+}
+function showSettings(show) { settingsPanel.style.display = show ? "block" : "none"; }
+function showGameOver(msg) {
+  gameoverScreen.classList.remove("hidden");
+  gameOverMsg.textContent = msg;
+  finalScore.textContent = `${TEXTS[lang].finalscore} ${score}`;
+}
+function hideGameOver() {
+  gameoverScreen.classList.add("hidden");
+  gameOverMsg.textContent = ""; // Clear game over message
+}
+function showStartBtn(show) { startBtn.style.display = show ? "inline-block" : "none"; }
+function showGameArea(show) {
+  scoreEl.style.display = show ? "inline-block" : "none";
+  timerEl.style.display = show ? "inline-block" : "none";
+  targetColorEl.style.display = show ? "block" : "none";
+  colorBtnsDiv.style.display = show ? "flex" : "none";
+  powerupEl.style.display = "none";
+}
+function setTheme(dark) {
+  document.body.classList.toggle("dark", dark);
+  themeToggle.checked = dark;
+}
+function setDifficulty(diff) {
+  if (diff === "easy") {
+    increaseEvery = 10; maxColors = 8; shuffleEvery = 0; timePerRound = 0;
+  } else if (diff === "medium") {
+    increaseEvery = 5; maxColors = 1000; shuffleEvery = 2; timePerRound = 0;
+  } else if (diff === "hard") {
+    increaseEvery = 1; maxColors = 1000; shuffleEvery = 1; timePerRound = 1.5;
+  }
+}
+function getCurrentColors() {
+  let numColors = 4 + Math.floor(round / increaseEvery);
+  if (difficulty === "easy" && numColors > maxColors) numColors = maxColors;
+  if (numColors > ALL_COLORS.length) numColors = ALL_COLORS.length;
+  return ALL_COLORS.slice(0, numColors);
+}
+function shouldShuffle() {
+  if (difficulty === "easy") return false;
+  if (difficulty === "medium") return (shuffleCounter % shuffleEvery === 0);
+  if (difficulty === "hard") return true;
+  return false;
+}
+function startGame() {
+  started = true;
+  score = 0; time = 30; round = 0; canPlay = true; powerupActive = false; shuffleCounter = 0;
+  hideGameOver(); // Clear game over screen and message
+  showStartBtn(false); showGameArea(true);
+  updateScore(); updateTimer();
+  bgMusic.currentTime = 0;
+  if (soundOn) { bgMusic.volume = 0.3; bgMusic.play().catch(e => console.log("Audio play failed:", e)); } else { bgMusic.pause(); }
+  nextRound();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (!canPlay) return;
+    time--; updateTimer();
+    if (time <= 0) endGame(TEXTS[lang].gameover_time);
+  }, 1000);
+}
+function endGame(msg) {
+  canPlay = false;
+  clearInterval(timerInterval);
+  clearTimeout(timeTimeout);
+  bgMusic.pause();
+  showGameOver(msg);
+  showGameArea(false);
+  showStartBtn(true); // Show start button to restart
+}
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+function renderColorButtons() {
+  colorBtnsDiv.innerHTML = '';
+  let btnColors = [...currentColors];
+  if (shouldShuffle()) btnColors = shuffle(btnColors);
+  btnColors.forEach(color => {
+    const btn = document.createElement('button');
+    btn.className = 'color-btn ' + color.name;
+    btn.setAttribute('data-color', color.name);
+    btn.title = color.label[lang];
+    btn.style.background = color.hex;
+    btn.onclick = () => handleColorClick(color.name);
+    colorBtnsDiv.appendChild(btn);
+  });
+}
+function nextRound() {
+  if (!canPlay) return;
+  round++; shuffleCounter++;
+  currentColors = getCurrentColors();
+  renderColorButtons();
+  const randomIndex = Math.floor(Math.random() * currentColors.length);
+  currentColor = currentColors[randomIndex].name;
+  const colorObj = currentColors.find(c => c.name === currentColor);
+  targetColorEl.style.background = colorObj.hex;
+  if (!powerupActive && Math.random() < 0.14) showPowerup();
+  else powerupEl.style.display = 'none';
+  if (difficulty === "hard") {
+    clearTimeout(timeTimeout);
+    timeTimeout = setTimeout(() => {
+      if (canPlay) {
+        if (soundOn) sfxWrong.play().catch(e => console.log("SFX play failed:", e));
+        setTimeout(() => endGame(TEXTS[lang].gameover_wrong), 250);
+      }
+    }, timePerRound * 1000);
+  }
+}
+function handleColorClick(colorName) {
+  if (!canPlay) return;
+  if (difficulty === "hard") clearTimeout(timeTimeout);
+  if (colorName === currentColor) {
+    score++; updateScore();
+    if (soundOn) sfxCorrect.play().catch(e => console.log("SFX play failed:", e));
+    setTimeout(nextRound, 80);
+  } else {
+    if (soundOn) sfxWrong.play().catch(e => console.log("SFX play failed:", e));
+    setTimeout(() => endGame(TEXTS[lang].gameover_wrong), 250);
+  }
+}
+function showPowerup() {
+  powerupActive = true;
+  powerupEl.textContent = TEXTS[lang].powerup;
+  powerupEl.style.display = 'block';
+  powerupEl.onclick = () => {
+    if (!canPlay) return;
+    time += 5; updateTimer();
+    if (soundOn) sfxPowerup.play().catch(e => console.log("SFX play failed:", e));
+    powerupEl.style.display = 'none';
+    powerupActive = false;
+  };
+  setTimeout(() => { powerupEl.style.display = 'none'; powerupActive = false; }, 3000);
+}
+startBtn.onclick = startGame;
+settingsBtn.onclick = () => showSettings(true);
+settingsPanel.querySelector('.close-btn').onclick = () => showSettings(false);
+langSelect.onchange = () => { lang = langSelect.value; setTexts(); renderColorButtons(); if (!started) showStartBtn(true); };
+soundToggle.onchange = () => { soundOn = soundToggle.checked; if (!soundOn) bgMusic.pause(); else if (started && canPlay) bgMusic.play().catch(e => console.log("Audio play failed:", e)); };
+sizeRange.oninput = () => { btnSize = parseInt(sizeRange.value); setBtnSize(btnSize); };
+difficultySelect.onchange = () => { difficulty = difficultySelect.value; setDifficulty(difficulty); if (!started) showStartBtn(true); };
+themeToggle.onchange = () => { darkMode = themeToggle.checked; setTheme(darkMode); };
+setTheme(false);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) bgMusic.pause();
+  else if (soundOn && canPlay) bgMusic.play().catch(e => console.log("Audio play failed:", e));
+});
+function init() {
+  setTexts(); setBtnSize(btnSize); setDifficulty(difficulty);
+  showStartBtn(true); showGameArea(false); hideGameOver();
+  if (navigator.language && navigator.language.toLowerCase().startsWith("en")) {
+    lang = "en-us"; langSelect.value = "en-us"; setTexts();
+  } else if (navigator.language.toLowerCase().startsWith("es")) {
+    lang = "es-es"; langSelect.value = "es-es"; setTexts();
+  } else if (navigator.language.toLowerCase().startsWith("zh")) {
+    lang = "zh-cn"; langSelect.value = "zh-cn"; setTexts();
+  } else if (navigator.language.toLowerCase().startsWith("de")) {
+    lang = "de-de"; langSelect.value = "de-de"; setTexts();
+  } else if (navigator.language.toLowerCase().startsWith("ru")) {
+    lang = "ru-ru"; langSelect.value = "ru-ru"; setTexts();
+  }
+}
+init();
+</script>
+</body>
+</html>
