@@ -317,6 +317,7 @@
           <option value="easy">Fácil</option>
           <option value="medium">Médio</option>
           <option value="hard">Difícil</option>
+          <option value="impossible">Impossível</option>
         </select>
       </div>
       <div>
@@ -363,7 +364,8 @@ const TEXTS = {
     lbl_theme: "Tema escuro:",
     easy: "Fácil",
     medium: "Médio",
-    hard: "Difícil"
+    hard: "Difícil",
+    impossible: "Impossível"
   },
   "en-us": {
     title: "Color Match",
@@ -382,7 +384,8 @@ const TEXTS = {
     lbl_theme: "Dark theme:",
     easy: "Easy",
     medium: "Medium",
-    hard: "Hard"
+    hard: "Hard",
+    impossible: "Impossible"
   },
   "es-es": {
     title: "Color Match",
@@ -401,7 +404,8 @@ const TEXTS = {
     lbl_theme: "Tema oscuro:",
     easy: "Fácil",
     medium: "Medio",
-    hard: "Difícil"
+    hard: "Difícil",
+    impossible: "Imposible"
   },
   "zh-cn": {
     title: "颜色匹配",
@@ -420,7 +424,8 @@ const TEXTS = {
     lbl_theme: "暗黑主题：",
     easy: "简单",
     medium: "中等",
-    hard: "困难"
+    hard: "困难",
+    impossible: "不可能"
   },
   "de-de": {
     title: "Farben Match",
@@ -439,7 +444,8 @@ const TEXTS = {
     lbl_theme: "Dunkles Thema:",
     easy: "Einfach",
     medium: "Mittel",
-    hard: "Schwer"
+    hard: "Schwer",
+    impossible: "Unmöglich"
   },
   "ru-ru": {
     title: "Цветовой Матч",
@@ -458,7 +464,8 @@ const TEXTS = {
     lbl_theme: "Темная тема:",
     easy: "Легкий",
     medium: "Средний",
-    hard: "Сложный"
+    hard: "Сложный",
+    impossible: "Невозможный"
   }
 };
 const ALL_COLORS = [
@@ -492,6 +499,7 @@ let score = 0, time = 30, round = 0, canPlay = false, timerInterval, powerupActi
 let currentColor = '', currentColors = [];
 let shuffleEvery = 0, shuffleCounter = 0, increaseEvery = 10, maxColors = 8, timePerRound = 0, timeTimeout = null;
 let started = false;
+let flashInterval = null;
 
 const $ = id => document.getElementById(id);
 const h1 = $("title");
@@ -530,6 +538,7 @@ function setTexts() {
   difficultySelect.options[0].text = TEXTS[lang].easy;
   difficultySelect.options[1].text = TEXTS[lang].medium;
   difficultySelect.options[2].text = TEXTS[lang].hard;
+  difficultySelect.options[3].text = TEXTS[lang].impossible;
 }
 function updateScore() { scoreEl.textContent = `${TEXTS[lang].score}: ${score}`; }
 function updateTimer() { timerEl.textContent = `${TEXTS[lang].timer}: ${time}`; }
@@ -545,7 +554,7 @@ function showGameOver(msg) {
 }
 function hideGameOver() {
   gameoverScreen.classList.add("hidden");
-  gameOverMsg.textContent = ""; // Clear game over message
+  gameOverMsg.textContent = "";
 }
 function showStartBtn(show) { startBtn.style.display = show ? "inline-block" : "none"; }
 function showGameArea(show) {
@@ -566,6 +575,8 @@ function setDifficulty(diff) {
     increaseEvery = 5; maxColors = 1000; shuffleEvery = 2; timePerRound = 0;
   } else if (diff === "hard") {
     increaseEvery = 1; maxColors = 1000; shuffleEvery = 1; timePerRound = 1.5;
+  } else if (diff === "impossible") {
+    increaseEvery = 1; maxColors = 1000; shuffleEvery = 1; timePerRound = 1.2;
   }
 }
 function getCurrentColors() {
@@ -577,13 +588,14 @@ function getCurrentColors() {
 function shouldShuffle() {
   if (difficulty === "easy") return false;
   if (difficulty === "medium") return (shuffleCounter % shuffleEvery === 0);
-  if (difficulty === "hard") return true;
+  if (difficulty === "hard" || difficulty === "impossible") return true;
   return false;
 }
 function startGame() {
   started = true;
   score = 0; time = 30; round = 0; canPlay = true; powerupActive = false; shuffleCounter = 0;
-  hideGameOver(); // Clear game over screen and message
+  clearInterval(flashInterval);
+  hideGameOver();
   showStartBtn(false); showGameArea(true);
   updateScore(); updateTimer();
   bgMusic.currentTime = 0;
@@ -600,10 +612,11 @@ function endGame(msg) {
   canPlay = false;
   clearInterval(timerInterval);
   clearTimeout(timeTimeout);
+  clearInterval(flashInterval);
   bgMusic.pause();
   showGameOver(msg);
   showGameArea(false);
-  showStartBtn(true); // Show start button to restart
+  showStartBtn(true);
 }
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -611,6 +624,18 @@ function shuffle(array) {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
+}
+function flashColors() {
+  if (difficulty !== "impossible") return;
+  let btnColors = [...currentColors];
+  btnColors = shuffle(btnColors);
+  const buttons = colorBtnsDiv.querySelectorAll('.color-btn');
+  buttons.forEach((btn, index) => {
+    const color = btnColors[index % btnColors.length];
+    btn.style.background = color.hex;
+    btn.setAttribute('data-color', color.name);
+    btn.title = color.label[lang];
+  });
 }
 function renderColorButtons() {
   colorBtnsDiv.innerHTML = '';
@@ -625,6 +650,10 @@ function renderColorButtons() {
     btn.onclick = () => handleColorClick(color.name);
     colorBtnsDiv.appendChild(btn);
   });
+  if (difficulty === "impossible") {
+    clearInterval(flashInterval);
+    flashInterval = setInterval(flashColors, 200);
+  }
 }
 function nextRound() {
   if (!canPlay) return;
@@ -637,7 +666,7 @@ function nextRound() {
   targetColorEl.style.background = colorObj.hex;
   if (!powerupActive && Math.random() < 0.14) showPowerup();
   else powerupEl.style.display = 'none';
-  if (difficulty === "hard") {
+  if (difficulty === "hard" || difficulty === "impossible") {
     clearTimeout(timeTimeout);
     timeTimeout = setTimeout(() => {
       if (canPlay) {
@@ -649,7 +678,7 @@ function nextRound() {
 }
 function handleColorClick(colorName) {
   if (!canPlay) return;
-  if (difficulty === "hard") clearTimeout(timeTimeout);
+  if (difficulty === "hard" || difficulty === "impossible") clearTimeout(timeTimeout);
   if (colorName === currentColor) {
     score++; updateScore();
     if (soundOn) sfxCorrect.play().catch(e => console.log("SFX play failed:", e));
